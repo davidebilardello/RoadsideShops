@@ -1,12 +1,11 @@
 package it.escanortargaryen.roadsideshop;
 
-import dev.jorel.commandapi.CommandAPI;
-import dev.jorel.commandapi.CommandAPIBukkitConfig;
 import it.escanortargaryen.roadsideshop.classes.LockedSlot;
 import it.escanortargaryen.roadsideshop.classes.LockedSlotCheck;
 import it.escanortargaryen.roadsideshop.classes.Shop;
 import it.escanortargaryen.roadsideshop.db.DatabaseManager;
 import it.escanortargaryen.roadsideshop.managers.Commands;
+import it.escanortargaryen.roadsideshop.managers.LibbyManager;
 import it.escanortargaryen.roadsideshop.managers.ShopsManager;
 import net.milkbowl.vault.economy.Economy;
 import org.bstats.bukkit.Metrics;
@@ -45,6 +44,9 @@ public class RoadsideShops extends JavaPlugin implements Listener {
         return econ;
     }
 
+    private Commands commandAPI;
+    private LibbyManager libbyManager;
+
     /**
      * All custom locked slots.
      */
@@ -53,10 +55,13 @@ public class RoadsideShops extends JavaPlugin implements Listener {
     @Override
     public void onLoad() {
         INSTANCE = this;
-        if (!test)
-            CommandAPI.onLoad(new CommandAPIBukkitConfig(this).silentLogs(true).usePluginNamespace());
-
         saveResource("config.yml", false);
+        new InternalUtil();
+        libbyManager = new LibbyManager(this);
+        commandAPI = new Commands();
+
+        if (!test)
+            commandAPI.onLoad(this);
 
     }
 
@@ -130,20 +135,19 @@ public class RoadsideShops extends JavaPlugin implements Listener {
         }
         Metrics metrics = null;
         if (!test) {
-            CommandAPI.onEnable();
+            commandAPI.onEnable();
 
             //setup bstat
-            int pluginId = 17468; // <-- Replace with the id of your plugin!
+            int pluginId = 17468;
             metrics = new Metrics(this, pluginId);
 
         }
 
         Bukkit.getPluginManager().registerEvents(this, this);
 
-        new InternalUtil();
+
         new ShopsManager(metrics);
-        if (!test)
-            new Commands();
+
         try {
             databaseManager = new DatabaseManager(new File(getDataFolder() + "/database.db"), metrics);
         } catch (Exception e) {
@@ -233,5 +237,6 @@ public class RoadsideShops extends JavaPlugin implements Listener {
         super(loader, description, dataFolder, file);
         test = true;
     }
+
 
 }
